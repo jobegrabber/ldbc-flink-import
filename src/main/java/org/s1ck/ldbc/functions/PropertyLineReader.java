@@ -51,7 +51,9 @@ public class PropertyLineReader extends LineReader<LDBCProperty> {
      reuseProperty.setPropertyValue(getPropertyValue(fieldValues));
      collector.collect(reuseProperty);
      reset();
-   } catch (NumberFormatException ignored) { }
+   } catch (NumberFormatException nfe) {
+     LOG.error("Could not parse number: " + nfe.getMessage());
+   }
   }
 
   private Long getVertexId(String[] fieldValues) {

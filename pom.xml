@@ -6,19 +6,19 @@
 
     <groupId>org.s1ck</groupId>
     <artifactId>ldbc-flink-import</artifactId>
-    <version>0.3</version>
-    
+    <version>0.4</version>
+
     <name>ldbc-flink-import</name>
     <description>Used to load the output of the LDBC-SNB Data Generator into Apache Flink DataSets.</description>
     <url>http://github.com/s1ck/ldbc-flink-import.git</url>
-    
+
     <licenses>
         <license>
             <name>GNU General Public License, Version 3</name>
             <url>https://www.gnu.org/licenses/gpl.txt</url>
         </license>
     </licenses>
-    
+
     <developers>
         <developer>
             <name>Martin Junghanns</name>
@@ -28,13 +28,13 @@
             <id>s1ck</id>
         </developer>
     </developers>
-    
+
     <scm>
        <connection>scm:git:s1ck@github.com/s1ck/ldbc-flink-import.git</connection>
        <developerConnection>scm:s1ck@github.com/s1ck/ldbc-flink-import.git</developerConnection>
        <url>http://github.com/s1ck/ldbc-flink-import.git</url>
     </scm>
-    
+
     <distributionManagement>
         <repository>
             <id>dbleipzig</id>

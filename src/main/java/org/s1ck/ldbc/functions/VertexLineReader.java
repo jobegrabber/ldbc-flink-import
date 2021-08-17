@@ -17,7 +17,9 @@
 package org.s1ck.ldbc.functions;
 
 import org.apache.flink.util.Collector;
+import org.apache.log4j.Logger;
 import org.s1ck.ldbc.LDBCConstants.FieldType;
+import org.s1ck.ldbc.LDBCToFlink;
 import org.s1ck.ldbc.tuples.LDBCVertex;
 
 /**
@@ -49,7 +51,9 @@ public class VertexLineReader extends LineReader<LDBCVertex> {
       reuseVertex.setProperties(getVertexProperties(fieldValues));
       collector.collect(reuseVertex);
       reset();
-    } catch (NumberFormatException ignored) { }
+    } catch (NumberFormatException nfe) {
+      LOG.error("Could not parse number: " + nfe.getMessage());
+    }
   }
 
   private Long getVertexID(String[] fieldValues) {

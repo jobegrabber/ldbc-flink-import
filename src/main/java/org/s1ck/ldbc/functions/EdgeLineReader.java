@@ -20,6 +20,8 @@ import org.apache.flink.util.Collector;
 import org.s1ck.ldbc.LDBCConstants.FieldType;
 import org.s1ck.ldbc.tuples.LDBCEdge;
 
+import java.text.ParseException;
+
 /**
  * Creates a {@link LDBCEdge} from an input line.
  */
@@ -45,8 +47,7 @@ public class EdgeLineReader extends LineReader<LDBCEdge> {
   }
 
   @Override
-  public void flatMap(String line, Collector<LDBCEdge> collector) throws
-    Exception {
+  public void flatMap(String line, Collector<LDBCEdge> collector) throws ParseException {
     try {
       String[] fieldValues = getFieldValues(line);
       Long sourceVertexId = getSourceVertexId(fieldValues);
@@ -60,7 +61,10 @@ public class EdgeLineReader extends LineReader<LDBCEdge> {
       reuseEdge.setProperties(getEdgeProperties(fieldValues));
       collector.collect(reuseEdge);
       reset();
-    } catch (NumberFormatException ignored) { }
+    } catch (ParseException nfe) {
+      LOG.error(String.format("Could not parse line: %s (line %s)", nfe.getMessage(), line));
+      throw nfe;
+    }
   }
 
   private Long getSourceVertexId(String[] fieldValues) {

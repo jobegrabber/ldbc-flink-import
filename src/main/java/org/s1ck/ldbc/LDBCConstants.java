@@ -86,8 +86,8 @@ public class LDBCConstants {
    */
 
   public static final String[] VERTEX_CLASS_COMMENT_FIELDS = new String[]{
-    VERTEX_ID_FIELD,
     "creationDate",
+          VERTEX_ID_FIELD,
     "locationIP",
     "browserUsed",
     "content",
@@ -110,17 +110,17 @@ public class LDBCConstants {
     "url"
   };
   public static final String[] VERTEX_CLASS_FORUM_FIELDS = new String[]{
+          "creationDate",
     VERTEX_ID_FIELD,
     "title",
-    "creationDate"
   };
   public static final String[] VERTEX_CLASS_PERSON_FIELDS = new String[]{
+          "creationDate",
     VERTEX_ID_FIELD,
     "firstName",
     "lastName",
     "gender",
     "birthday",
-    "creationDate",
     "locationIP",
     "browserUsed"
   };
@@ -131,9 +131,9 @@ public class LDBCConstants {
     "url"
   };
   public static final String[] VERTEX_CLASS_POST_FIELDS = new String[]{
+          "creationDate",
     VERTEX_ID_FIELD,
     "imageFile",
-    "creationDate",
     "locationIP",
     "browserUsed",
     "language",
@@ -146,9 +146,9 @@ public class LDBCConstants {
    */
 
   public static final String[] EDGE_CLASS_KNOWS_FIELDS = new String[]{
+          "creationDate",
     VERTEX_ID_FIELD,
     VERTEX_ID_FIELD,
-    "creationDate"
   };
 
   public static final String[] EDGE_CLASS_HAS_TYPE_FIELDS = new String[]{
@@ -157,54 +157,69 @@ public class LDBCConstants {
   };
 
   public static final String[] EDGE_CLASS_IS_LOCATED_IN_FIELDS = new String[]{
+
+          "creationDate",
     VERTEX_ID_FIELD,
     VERTEX_ID_FIELD,
   };
 
   public static final String[] EDGE_CLASS_HAS_INTEREST_FIELDS = new String[]{
+
+          "creationDate",
     VERTEX_ID_FIELD,
     VERTEX_ID_FIELD,
   };
 
   public static final String[] EDGE_CLASS_REPLY_OF_FIELDS = new String[]{
+
+          "creationDate",
     VERTEX_ID_FIELD,
     VERTEX_ID_FIELD,
   };
 
   public static final String[] EDGE_CLASS_STUDY_AT_FIELDS = new String[]{
+          "creationDate",
     VERTEX_ID_FIELD,
     VERTEX_ID_FIELD,
     "classYear"
   };
 
   public static final String[] EDGE_CLASS_HAS_MODERATOR_FIELDS = new String[]{
+          "creationDate",
     VERTEX_ID_FIELD,
     VERTEX_ID_FIELD,
   };
 
   public static final String[] EDGE_CLASS_HAS_MEMBER_FIELDS = new String[]{
+          "creationDate",
     VERTEX_ID_FIELD,
     VERTEX_ID_FIELD,
     "joinDate"
   };
 
   public static final String[] EDGE_CLASS_HAS_TAG_FIELDS = new String[]{
+          "creationDate",
     VERTEX_ID_FIELD,
     VERTEX_ID_FIELD,
   };
 
   public static final String[] EDGE_CLASS_HAS_CREATOR_FIELDS = new String[]{
+
+          "creationDate",
     VERTEX_ID_FIELD,
     VERTEX_ID_FIELD,
   };
 
   public static final String[] EDGE_CLASS_WORK_AT_FIELDS = new String[]{
+
+          "creationDate",
     VERTEX_ID_FIELD,
     VERTEX_ID_FIELD,
     "workFrom"
   };
 
   public static final String[] EDGE_CLASS_CONTAINER_OF_FIELDS = new String[]{
+          "creationDate",
     VERTEX_ID_FIELD,
     VERTEX_ID_FIELD,
   };
@@ -220,9 +235,9 @@ public class LDBCConstants {
   };
 
   public static final String[] EDGE_CLASS_LIKES_FIELDS = new String[]{
+          "creationDate",
     VERTEX_ID_FIELD,
     VERTEX_ID_FIELD,
-    "creationDate"
   };
 
   /**
@@ -230,11 +245,13 @@ public class LDBCConstants {
    */
 
   public static final String[] PROPERTY_CLASS_EMAIL_FIELDS = new String[]{
+          "creationDate",
     VERTEX_ID_FIELD,
     "email"
   };
 
   public static final String[] PROPERTY_CLASS_SPEAKS_FIELDS = new String[]{
+          "creationDate",
     VERTEX_ID_FIELD,
     "language"
   };
@@ -359,12 +376,12 @@ public class LDBCConstants {
 
   public static final FieldType[] EDGE_CLASS_KNOWS_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // source id
       FieldType.LONG,
       // target id
       FieldType.LONG,
-      // creationDate
-      FieldType.DATETIME
     };
 
   public static final FieldType[] EDGE_CLASS_HAS_TYPE_FIELD_TYPES =
@@ -377,6 +394,8 @@ public class LDBCConstants {
 
   public static final FieldType[] EDGE_CLASS_IS_LOCATED_IN_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // source id
       FieldType.LONG,
       // target id
@@ -385,6 +404,8 @@ public class LDBCConstants {
 
   public static final FieldType[] EDGE_CLASS_HAS_INTEREST_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // source id
       FieldType.LONG,
       // target id
@@ -393,6 +414,8 @@ public class LDBCConstants {
 
   public static final FieldType[] EDGE_CLASS_REPLY_OF_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // source id
       FieldType.LONG,
       // target id
@@ -401,6 +424,8 @@ public class LDBCConstants {
 
   public static final FieldType[] EDGE_CLASS_STUDY_AT_FIELD_TYPES =
     new FieldType[]{
+      // creationDate
+      FieldType.DATETIME,
       // source id
       FieldType.LONG,
       // target id
@@ -411,6 +436,8 @@ public class LDBCConstants {
 
   public static final FieldType[] EDGE_CLASS_HAS_MODERATOR_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // source id
       FieldType.LONG,
       // target id
@@ -419,16 +446,20 @@ public class LDBCConstants {
 
   public static final FieldType[] EDGE_CLASS_HAS_MEMBER_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // source id
       FieldType.LONG,
       // target id
       FieldType.LONG,
-      // joinDate
-      FieldType.DATETIME
+            // joinDate
+            FieldType.STRING,
     };
 
   public static final FieldType[] EDGE_CLASS_HAS_TAG_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // source id
       FieldType.LONG,
       // target id
@@ -437,6 +468,8 @@ public class LDBCConstants {
 
   public static final FieldType[] EDGE_CLASS_HAS_CREATOR_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // source id
       FieldType.LONG,
       // target id
@@ -445,6 +478,8 @@ public class LDBCConstants {
 
   public static final FieldType[] EDGE_CLASS_WORK_AT_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // source id
       FieldType.LONG,
       // target id
@@ -455,6 +490,8 @@ public class LDBCConstants {
 
   public static final FieldType[] EDGE_CLASS_CONTAINER_OF_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // source id
       FieldType.LONG,
       // target id
@@ -479,12 +516,12 @@ public class LDBCConstants {
 
   public static final FieldType[] EDGE_CLASS_LIKES_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // source id
       FieldType.LONG,
       // target id
       FieldType.LONG,
-      // creationDate
-      FieldType.DATETIME
     };
 
   /**
@@ -493,6 +530,8 @@ public class LDBCConstants {
 
   public static final FieldType[] PROPERTY_CLASS_EMAIL_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // id
       FieldType.LONG,
       // email
@@ -501,6 +540,8 @@ public class LDBCConstants {
 
   public static final FieldType[] PROPERTY_CLASS_SPEAKS_FIELD_TYPES =
     new FieldType[]{
+            // creationDate
+            FieldType.DATETIME,
       // id
       FieldType.LONG,
       // language

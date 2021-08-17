@@ -18,8 +18,10 @@ package org.s1ck.ldbc.functions;
 
 import com.google.common.collect.Maps;
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.log4j.Logger;
 import org.s1ck.ldbc.LDBCConstants;
 import org.s1ck.ldbc.LDBCConstants.FieldType;
+import org.s1ck.ldbc.LDBCToFlink;
 
 import java.text.ParseException;
 import java.time.LocalDate;
@@ -40,6 +42,8 @@ import static org.s1ck.ldbc.LDBCConstants.TYPE_DISCRIMINATOR_FIELD;
  */
 public abstract class LineReader<OUT> implements
   FlatMapFunction<String, OUT> {
+  /** Logger */
+  protected static final Logger LOG = Logger.getLogger(LDBCToFlink.class);
 
   private final static int LOG2_LONG_MAX_VALUE = log2(Long.MAX_VALUE);
 

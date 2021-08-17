@@ -40,6 +40,7 @@ import org.s1ck.ldbc.tuples.LDBCVertex;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -70,13 +71,13 @@ public class LDBCToFlink {
   private final Pattern fileNameTokenDelimiter;
 
   /** List of vertex files */
-  private final List<String> vertexFilePaths;
+  private final List<FileStatus> vertexFilePaths;
 
   /** List of edge files */
-  private final List<String> edgeFilePaths;
+  private final List<FileStatus> edgeFilePaths;
 
   /** List of property files */
-  private final List<String> propertyFilePaths;
+  private final List<FileStatus> propertyFilePaths;
 
   /**
    * Maps a vertex class (e.g. Person, Comment) to a unique identifier.
@@ -116,6 +117,7 @@ public class LDBCToFlink {
     if (conf == null) {
       throw new IllegalArgumentException("Hadoop Configuration must not  be null");
     }
+    LOG.info("conf = " + conf.toString());
     this.ldbcDirectory = ldbcDirectory;
     this.vertexFilePaths = Lists.newArrayList();
     this.edgeFilePaths = Lists.newArrayList();
@@ -132,12 +134,22 @@ public class LDBCToFlink {
    *
    * @return DataSet containing all vertices in the LDBC graph
    */
-  public DataSet<LDBCVertex> getVertices() {
+  public DataSet<LDBCVertex> getVertices() throws IOException {
     LOG.info("Reading vertices");
     final List<DataSet<LDBCVertex>> vertexDataSets =
       Lists.newArrayListWithCapacity(vertexFilePaths.size());
-    for (String filePath : vertexFilePaths) {
-      vertexDataSets.add(readVertexFile(filePath));
+    for (FileStatus fileStatus : vertexFilePaths) {
+      if (fileStatus.isFile())
+        vertexDataSets.add(readVertexFile(fileStatus.getPath(), false));
+      else {
+        for (FileStatus childStatus : FileSystem.get(conf).listStatus(fileStatus.getPath())) {
+          if (childStatus.isFile()) {
+            Path childPath = childStatus.getPath();
+            if (childPath.getName().endsWith("csv"))
+              vertexDataSets.add(readVertexFile(childPath, true));
+          }
+        }
+      }
     }
 
     DataSet<LDBCVertex> vertices = unionDataSets(vertexDataSets);
@@ -152,12 +164,22 @@ public class LDBCToFlink {
    *
    * @return DataSet containing all edges in the LDBC graph.
    */
-  public DataSet<LDBCEdge> getEdges() {
+  public DataSet<LDBCEdge> getEdges() throws IOException {
     LOG.info("Reading edges");
     List<DataSet<LDBCEdge>> edgeDataSets =
       Lists.newArrayListWithCapacity(edgeFilePaths.size());
-    for (String filePath : edgeFilePaths) {
-      edgeDataSets.add(readEdgeFile(filePath));
+    for (FileStatus filePath : edgeFilePaths) {
+      if (filePath.isFile())
+        edgeDataSets.add(readEdgeFile(filePath.getPath(), false));
+      else {
+        for (FileStatus childStatus : FileSystem.get(conf).listStatus(filePath.getPath())) {
+          if (childStatus.isFile()) {
+            Path childPath = childStatus.getPath();
+            if (childPath.getName().endsWith("csv"))
+              edgeDataSets.add(readEdgeFile(childPath, true));
+          }
+        }
+      }
     }
 
     return DataSetUtils.zipWithUniqueId(unionDataSets(edgeDataSets))
@@ -171,7 +193,7 @@ public class LDBCToFlink {
   }
 
   private DataSet<LDBCVertex> addMultiValuePropertiesToVertices(
-    DataSet<LDBCVertex> vertices) {
+    DataSet<LDBCVertex> vertices) throws IOException {
     DataSet<LDBCMultiValuedProperty> groupedProperties = getProperties()
       // group properties by vertex id and property key
       .groupBy(0, 1)
@@ -183,13 +205,23 @@ public class LDBCToFlink {
       .with(new VertexPropertyGroupCoGroupReducer());
   }
 
-  private DataSet<LDBCProperty> getProperties() {
+  private DataSet<LDBCProperty> getProperties() throws IOException {
     LOG.info("Reading multi valued properties");
     List<DataSet<LDBCProperty>> propertyDataSets =
       Lists.newArrayListWithCapacity(propertyFilePaths.size());
 
-    for (String filePath : propertyFilePaths) {
-      propertyDataSets.add(readPropertyFile(filePath));
+    for (FileStatus filePath : propertyFilePaths) {
+      if (filePath.isFile())
+        propertyDataSets.add(readPropertyFile(filePath.getPath(), false));
+      else {
+        for (FileStatus childStatus : FileSystem.get(conf).listStatus(filePath.getPath())) {
+          if (childStatus.isFile()) {
+            Path childPath = childStatus.getPath();
+            if (childPath.getName().endsWith("csv"))
+              propertyDataSets.add(readPropertyFile(childPath, true));
+          }
+        }
+      }
     }
 
     return unionDataSets(propertyDataSets);
@@ -213,10 +245,12 @@ public class LDBCToFlink {
     return finalDataSet;
   }
 
-  private DataSet<LDBCVertex> readVertexFile(String filePath) {
-    LOG.info("Reading vertices from " + filePath);
+  private DataSet<LDBCVertex> readVertexFile(Path filePath, boolean isDirectory) {
+    LOG.info("Reading vertices from " + filePath.toString());
 
-    String vertexClass = getVertexClass(getFileName(filePath)).toLowerCase();
+    String vertexClass = getVertexClass(getFileName(isDirectory
+    ? getFileName(filePath.getParent().getName())
+    : filePath.getName()).toLowerCase());
     Long vertexClassID = getVertexClassId(vertexClass);
     Long classCount = (long) vertexFilePaths.size();
 
@@ -259,15 +293,15 @@ public class LDBCToFlink {
       vertexClassFieldTypes = VERTEX_CLASS_TAGCLASS_FIELD_TYPES;
       break;
     }
-    return env.readTextFile(filePath, "UTF-8").flatMap(
+    return env.readTextFile(filePath.toString(), "UTF-8").flatMap(
       new VertexLineReader(vertexClassID, vertexClass, vertexClassFields,
         vertexClassFieldTypes, classCount));
   }
 
-  private DataSet<LDBCEdge> readEdgeFile(String filePath) {
-    LOG.info("Reading edges from " + filePath);
+  private DataSet<LDBCEdge> readEdgeFile(Path filePath, boolean isDirectory) {
+    LOG.info("Reading edges from " + filePath.toString());
 
-    String fileName = getFileName(filePath);
+    String fileName = getFileName(isDirectory ? filePath.getParent().getName() : filePath.getName());
     String edgeClass = getEdgeClass(fileName);
     String sourceVertexClass = getSourceVertexClass(fileName);
     String targetVertexClass = getTargetVertexClass(fileName);
@@ -340,16 +374,16 @@ public class LDBCToFlink {
       break;
     }
 
-    return env.readTextFile(filePath, "UTF-8").flatMap(
+    return env.readTextFile(filePath.toString(), "UTF-8").flatMap(
       new EdgeLineReader(edgeClass, edgeClassFields, edgeClassFieldTypes,
         sourceVertexClassId, sourceVertexClass, targetVertexClassId,
         targetVertexClass, vertexClassCount));
   }
 
-  private DataSet<LDBCProperty> readPropertyFile(String filePath) {
-    LOG.info("Reading properties from " + filePath);
+  private DataSet<LDBCProperty> readPropertyFile(Path filePath, boolean isDirectory) {
+    LOG.info("Reading properties from " + filePath.toString());
 
-    String fileName = getFileName(filePath);
+    String fileName = getFileName(isDirectory ? filePath.getParent().getName() : filePath.getName());
     String propertyClass = getPropertyClass(fileName);
     String vertexClass = getVertexClass(fileName);
     Long vertexClassId = getVertexClassId(vertexClass);
@@ -369,7 +403,7 @@ public class LDBCToFlink {
       break;
     }
 
-    return env.readTextFile(filePath, "UTF-8").flatMap(
+    return env.readTextFile(filePath.toString(), "UTF-8").flatMap(
       new PropertyLineReader(propertyClass, propertyClassFields,
         propertyClassFieldTypes, vertexClass, vertexClassId, vertexClassCount));
   }
@@ -381,7 +415,10 @@ public class LDBCToFlink {
   }
 
   private String getVertexClass(String fileName) {
-    return fileName.substring(0, fileName.indexOf(FILENAME_TOKEN_DELIMITER));
+    int indexOfFilenameTokenDelimiter = fileName.indexOf(FILENAME_TOKEN_DELIMITER);
+    return indexOfFilenameTokenDelimiter != -1
+            ? fileName.substring(0, indexOfFilenameTokenDelimiter)
+            : fileName;
   }
 
   private String getEdgeClass(String fileName) {
@@ -400,25 +437,37 @@ public class LDBCToFlink {
     return fileNameTokenDelimiter.split(fileName)[2];
   }
 
-  private boolean isVertexFile(String fileName) {
-    return isValidFile(fileName) &&
-      fileName.split(FILENAME_TOKEN_DELIMITER).length == 3;
+  private List<Path> getCSVFilesInDirectory(FileSystem fileSystem, Path dir) throws IOException {
+    List<Path> paths = new ArrayList<>();
+    FileStatus[] fileStates = fileSystem.listStatus(dir);
+    for (FileStatus childStatus : fileStates) {
+      Path childPath = childStatus.getPath();
+      if (childStatus.isFile() && childPath.getName().endsWith("csv")) {
+        paths.add(childPath);
+      }
+    }
+    return paths;
   }
 
-  private boolean isEdgeFile(String fileName) {
-    return isValidFile(fileName) &&
-      fileName.split(FILENAME_TOKEN_DELIMITER).length == 5 &&
-      !fileName.contains(PROPERTY_CLASS_EMAIL) &&
-      !fileName.contains(PROPERTY_CLASS_SPEAKS);
+  private boolean isVertexPath(FileStatus fileStatus) {
+    String name = fileStatus.getPath().getName();
+    return (fileStatus.isFile() && name.split(FILENAME_TOKEN_DELIMITER).length == 3)
+            || (fileStatus.isDirectory() && name.split(FILENAME_TOKEN_DELIMITER).length == 1);
   }
 
-  private boolean isPropertyFile(String fileName) {
-    return isValidFile(fileName) && (fileName.contains(PROPERTY_CLASS_EMAIL) ||
-      fileName.contains(PROPERTY_CLASS_SPEAKS));
+  private boolean isEdgePath(FileStatus fileStatus) {
+    String name = fileStatus.getPath().getName();
+    return ((fileStatus.isFile() &&
+      name.split(FILENAME_TOKEN_DELIMITER).length == 5) || (fileStatus.isDirectory() &&
+            name.split(FILENAME_TOKEN_DELIMITER).length == 3)) &&
+            !name.contains(PROPERTY_CLASS_EMAIL) &&
+            !name.contains(PROPERTY_CLASS_SPEAKS);
   }
 
-  private boolean isValidFile(String fileName) {
-    return !fileName.startsWith(".");
+
+  private boolean isPropertyPath(FileStatus fileStatus) {
+    String name = fileStatus.getPath().getName();
+    return  name.contains(PROPERTY_CLASS_EMAIL) || name.contains(PROPERTY_CLASS_SPEAKS);
   }
 
   private Long getVertexClassId(String vertexClass) {
@@ -436,7 +485,7 @@ public class LDBCToFlink {
     if (ldbcDirectory.startsWith("hdfs://")) {
       initFromHDFS();
     } else {
-      initFromLocalFS();
+      throw new UnsupportedOperationException("Can only load from HDFS");
     }
   }
 
@@ -450,34 +499,18 @@ public class LDBCToFlink {
       }
       FileStatus[] fileStates = fs.listStatus(p);
       for (FileStatus fileStatus : fileStates) {
-        String filePath = fileStatus.getPath().getName();
-        if (isVertexFile(filePath)) {
-          vertexFilePaths.add(ldbcDirectory + filePath);
-        } else if (isEdgeFile(filePath)) {
-          edgeFilePaths.add(ldbcDirectory + filePath);
-        } else if (isPropertyFile(filePath)) {
-          propertyFilePaths.add(ldbcDirectory + filePath);
+          if (isVertexPath(fileStatus)) {
+            vertexFilePaths.add(fileStatus);
+          }
+        else if (isEdgePath(fileStatus)) {
+          edgeFilePaths.add(fileStatus);
+        }
+        else if (isPropertyPath(fileStatus)) {
+          propertyFilePaths.add(fileStatus);
         }
       }
     } catch (IOException e) {
       e.printStackTrace();
-    }
-  }
-
-  private void initFromLocalFS() {
-    File folder = new File(ldbcDirectory);
-    if (!folder.exists() || !folder.isDirectory()) {
-      throw new IllegalArgumentException(
-        String.format("%s does not exist or is not a directory", ldbcDirectory));
-    }
-    for (final File fileEntry : folder.listFiles()) {
-      if (isVertexFile(fileEntry.getName())) {
-        vertexFilePaths.add(fileEntry.getAbsolutePath());
-      } else if (isEdgeFile(fileEntry.getName())) {
-        edgeFilePaths.add(fileEntry.getAbsolutePath());
-      } else if (isPropertyFile(fileEntry.getName())) {
-        propertyFilePaths.add(fileEntry.getAbsolutePath());
-      }
     }
   }
 }
